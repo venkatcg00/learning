@@ -1,7 +1,10 @@
+"""
+A password generator program that generates strong passwords based on user input.
+"""
+
 import random
 import string
 import time
-from typing import List, Optional
 
 
 class Color:
@@ -40,6 +43,8 @@ class PasswordGenerator:
     """
     A class to generate a strong password.
     """
+    total_attempts: int = 0  # Track the total number of attempts
+
     def __init__(self, length: int) -> None:
         self.length: int = length
         self.attempt: int = 0
@@ -49,41 +54,58 @@ class PasswordGenerator:
         """
         Generate an encrypted password with the specified length.
 
-        Reuturns:
+        Returns:
             str: Generated strong password
         """
         is_password_strong: bool = False
 
         while not is_password_strong:
             self.attempt += 1
+            PasswordGenerator.total_attempts += 1  # Increment the total attempts
             Printer.print_with_color(f"Attempt {self.attempt}: Generating password...", Color.YELLOW)
-            self.password = ''.join(random.choices(string.ascii_letters + string.digits + string.punctuation, k=self.length))
+            self.password = ''.join(random.choices(string.ascii_letters + string.digits + string.punctuation,
+                                                   k=self.length))
             Printer.print_with_color(f"Generated password: {self.password}", Color.MAGENTA)
-            print("\n" * 2)
+            print()
 
-            #Check if the generated password passes the strong password policy.
-            is_password_strong = (
-                    any(char.isupper() for char in self.password) and
-                    any(char.islower() for char in self.password) and
-                    any(char.isdigit() for char in self.password) and
-                    any(char in string.punctuation for char in self.password) and
-                    not self.password[-1].isdigit() and not self.password[-1] in string.punctuation and
-                    not self.password[-2].isdigit() and not self.password[-2] in string.punctuation and
-                    not self.password[0] in string.punctuation
-                    )
+            # Check if the generated password passes the strong password policy.
+            # Add the reasons to a list if the password does not pass strong password policy.
+            reasons = []
 
-            if is_password_strong:
+            if not any(char.isupper() for char in self.password):
+                reasons.append("Missing uppercase characters")
+            if not any(char.islower() for char in self.password):
+                reasons.append("Missing lowercase characters")
+            if not any(char.isdigit() for char in self.password):
+                reasons.append("Missing digits")
+            if not any(char in string.punctuation for char in self.password):
+                reasons.append("Missing special characters")
+            if self.password[-1].isdigit() or self.password[-1] in string.punctuation:
+                reasons.append("Last character cannot be a digit or special character")
+            if self.password[-2].isdigit() or self.password[-2] in string.punctuation:
+                reasons.append("Second last character cannot be a digit or special character")
+            if self.password[0] in string.punctuation:
+                reasons.append("First character cannot be a special character")
+
+
+            if not reasons:
+                is_password_strong = True
                 Printer.print_with_color("Checking if the generated password is as per standards...", Color.YELLOW)
                 print()
                 time.sleep(1)
                 Printer.print_with_color("Generated password is strong and meets all the requirements.", Color.GREEN)
-                print('\n' * 2)
+                print()
             else:
                 Printer.print_with_color("Checking if the generated password is as per standards...", Color.YELLOW)
                 print()
                 time.sleep(1)
-                Printer.print_with_color("Generated password is not strong. Generating a new password...", Color.RED)
-                print('\n' * 2)
+                Printer.print_with_color("Generated password is not strong. Reasons:", Color.RED)
+                print()
+                for reason in reasons:
+                    Printer.print_with_color(f"- {reason}", Color.RED)
+                print()
+                Printer.print_with_color("Generating a new password...", Color.RED)
+                print()
 
         return self.password
 
@@ -102,9 +124,11 @@ class PasswordManager:
         """
         while True:
             try:
-                password_length = int(input("Enter the desired password length (minimum 8): "))
+                password_length = int(input(Color.YELLOW + "Enter the desired password length (minimum 8): " + Color.RESET))
                 if password_length >= 8:
-                    print('\n' * 2)
+                    print()
+                    Printer.print_with_color("Password Length is meeting the threshold.",Color.GREEN)
+                    print()
                     return password_length
                 else:
                     print()
@@ -121,43 +145,44 @@ class PasswordManager:
         Generate a strong password based on user input.
         """
         Printer.print_dashed_line()
-        Printer.print_with_color("Password Generator", Color.BLUE)
+        Printer.print_with_color("Password Generator", Color.MAGENTA)
         Printer.print_dashed_line()
 
-        #Get user input for password length
+        # Get user input for password length
         password_length = PasswordManager.get_password_length()
 
         Printer.print_dashed_line()
         Printer.print_with_color("Generating Strong Password...", Color.YELLOW)
         Printer.print_dashed_line()
 
-        #Generate password and measure time taken
+        # Generate password and measure time taken
         start_time: float = time.time()
         generator: PasswordGenerator = PasswordGenerator(password_length)
         generated_password: str = generator.generate_password()
         end_time: float = time.time()
-        time_taken: float = round(end_time - start_time,2)
+        time_taken: float = round(end_time - start_time, 2)
 
         Printer.print_dashed_line()
         Printer.print_with_color("Password Generation Complete.", Color.BLUE)
         Printer.print_dashed_line()
-        print('\n' * 2)
+        print()
         Printer.print_with_color(f"Generated Password: {generated_password}", Color.GREEN)
         Printer.print_with_color(f"Time Taken: {time_taken} seconds", Color.GREEN)
-        print('\n' * 2)
+        Printer.print_with_color(f"Total Attempts: {PasswordGenerator.total_attempts}", Color.GREEN)  # Print total attempts
+        print()
         Printer.print_dashed_line()
 
 
 def main() -> None:
     """
-    The main function to execute the passsword generation process.
+    The main function to execute the password generation process.
     """
     Printer.print_dashed_line()
     Printer.print_with_color("Welcome to Password Generator!", Color.BLUE)
-    Printer.print_with_color("This program generated a strong password based on your input.", Color.BLUE)
-    print('\n' * 2)
+    Printer.print_with_color("This program generates a strong password based on your input.", Color.BLUE)
+    print()
 
-    #Generate Password
+    # Generate Password
     PasswordManager.generate_password()
 
     Printer.print_with_color("Thank you for using Password Generator!", Color.BLUE)
